@@ -3,39 +3,40 @@ import { Router } from "express"
 import jwt from "jsonwebtoken"
 import { io } from "../../server.js"
 import User from "../users/user.js"
+import Room from "./room.js"
 export const roomRouter = Router()
-roomRouter.post("/loginddd", async (req, res, next) => {
+roomRouter.get("/all", async (req, res, next) => {
   try {
-    let linkedInProfile = await User.findOne({
-      where: {
-        linkedinId: req.body.email,
-      },
-    })
-    if (linkedInProfile) {
-      res.send(linkedInProfile)
-    } else {
-      let allProfs = await axios.get(
-        "https://striveschool-api.herokuapp.com/api/profile",
-        {
-          headers: {
-            Authorization: process.env.LINKEDIN_KEY,
-          },
-        }
-      )
-      let linkedInProfile = allProfs.data.find(
-        (prof) => prof.email === req.body.email
-      )
-      if (linkedInProfile < 0) res.sendStatus(404)
-      else {
-        let newUser = await User.create({
-          first_name: linkedInProfile.name,
-          last_name: linkedInProfile.surname,
-          linkedinId: linkedInProfile._id,
-          linkedInProPic: linkedInProfile.image || null,
-        })
-        res.send(newUser)
-      }
-    }
+    let rooms = await Room.findAll()
+    if (rooms) {
+      res.send(rooms)
+    } else res.statusCode(404)
+  } catch (error) {
+    next(error)
+  }
+})
+
+roomRouter.put("/:id", async (req, res, next) => {
+  try {
+    let rooms = await Room.update(
+      { name: req.body.name },
+      { where: { id: req.params.id } }
+    )
+    if (rooms) {
+      res.send(rooms)
+    } else res.statusCode(404)
+  } catch (error) {
+    next(error)
+  }
+})
+
+
+roomRouter.post("/", async (req, res, next) => {
+  try {
+    let rooms = await Room.create({name: req.body.name})
+    if (rooms) {
+      res.send(rooms)
+    } else res.statusCode(404)
   } catch (error) {
     next(error)
   }

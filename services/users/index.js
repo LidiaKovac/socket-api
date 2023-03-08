@@ -6,35 +6,34 @@ import User from "../users/user.js"
 export const userRouter = Router()
 userRouter.post("/login", async (req, res, next) => {
   try {
-    let linkedInProfile = await User.findOne({
-      where: {
-        linkedinId: req.body.email,
-      },
-    })
-    if (linkedInProfile) {
-      res.send(linkedInProfile)
-    } else {
-      let allProfs = await axios.get(
-        "https://striveschool-api.herokuapp.com/api/profile",
-        {
-          headers: {
-            Authorization: process.env.LINKEDIN_KEY,
-          },
-        }
-      )
-      let linkedInProfile = allProfs.data.find(
-        (prof) => prof.email === req.body.email
-      )
-      if (linkedInProfile < 0) res.sendStatus(404)
-      else {
-        let newUser = await User.create({
-          first_name: linkedInProfile.name,
-          last_name: linkedInProfile.surname,
-          linkedinId: linkedInProfile._id,
-          linkedInProPic: linkedInProfile.image || null,
-        })
-        res.send(newUser)
+    let key = req.headers["authorization"]
+    let { status, statusText, data } = await axios.get(
+      "https://striveschool-api.herokuapp.com/api/profile/me",
+      {
+        headers: {
+          Authorization: key,
+        },
       }
+    )
+    if (status !== 200)
+      throw (
+        "Your key is probably wrong, but here is the actual error:" + statusText
+      )
+    else {
+      let linkedInProfile = await User.findOne({
+        where: {
+          linkedinId: data._id,
+        },
+      })
+      if (!linkedInProfile) {
+        let newProfile = await User.create({
+          first_name: data.name,
+          last_name: data.surname,
+          linkedinId: data._id,
+          linkedinProPic: data.image,
+        })
+        res.send(newProfile)
+      } else res.send(linkedInProfile)
     }
   } catch (error) {
     next(error)

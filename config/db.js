@@ -25,3 +25,4 @@ Room.hasMany(Message)
 Message.belongsTo(Room)
 Message.belongsTo(User)
 User.hasMany(Message)
+
