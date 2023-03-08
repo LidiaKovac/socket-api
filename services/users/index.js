@@ -3,8 +3,8 @@ import { Router } from "express"
 import jwt from "jsonwebtoken"
 import { io } from "../../server.js"
 import User from "../users/user.js"
-export const roomRouter = Router()
-roomRouter.post("/loginddd", async (req, res, next) => {
+export const userRouter = Router()
+userRouter.post("/login", async (req, res, next) => {
   try {
     let linkedInProfile = await User.findOne({
       where: {
