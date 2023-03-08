@@ -62,10 +62,15 @@ io.on("connection", async (socket) => {
 
       const rooms = await Room.findAll()
       onlineUsers.add(linkedInProfile)
-      socket.emit("loggedIn", { onlineUsers: [...onlineUsers], rooms, me: linkedInProfile })
+      socket.emit("loggedIn", {
+        onlineUsers: [...onlineUsers],
+        rooms,
+        me: linkedInProfile,
+      })
       //when the user connects, BE should keep track of socketId + linkedin id
-      socket.broadcast.emit("newUserHasLoggedIn", { onlineUsers: [...onlineUsers] })
-
+      socket.broadcast.emit("newUserHasLoggedIn", {
+        onlineUsers: [...onlineUsers],
+      })
     } catch (error) {
       console.log(error)
     }
@@ -115,7 +120,7 @@ io.on("connection", async (socket) => {
             console.log("room found")
             console.log("joining", room.name)
             socket.join(room.name)
-            socket.broadcast.emit("joined", { msgs })
+            socket.emit("joined", { msgs })
           } else {
             console.log("room not found")
             // //se non trova una stanza con quell'id, ne crea una nuova
