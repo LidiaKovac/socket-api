@@ -82,7 +82,7 @@ io.on("connection", async (socket) => {
         let room = await Room.findByPk(payload.room, { raw: true })
 
         console.log(room)
-        socket.to(room.name).emit("message", { ...newMessage.dataValues, User: user })
+        io.to(room.name).emit("message", { ...newMessage.dataValues, User: user })
       }
     } catch (error) {
       console.log(error)
@@ -107,6 +107,7 @@ io.on("connection", async (socket) => {
           })
           if (room) {
             console.log("room found")
+            console.log("joining", room.name);
             onlineUsers.push(linkedInProfile)
             socket.join(room.name)
             socket.emit("joined", { msgs })
