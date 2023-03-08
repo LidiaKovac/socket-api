@@ -70,6 +70,7 @@ io.on("connection", async (socket) => {
   socket.on("sendMsg", async (payload) => {
     try {
       let { status, statusText, linkedInProfile } = await auth(payload.token)
+      console.log(status);
       if (status == 200) {
         let newMessage = await Message.create({
           content: payload.msg,
@@ -80,7 +81,7 @@ io.on("connection", async (socket) => {
         let user = await User.findByPk(linkedInProfile.id)
         let room = await Room.findByPk(payload.room, { raw: true })
 
-        console.log(newMessage.dataValues)
+        console.log(room)
         socket.to(room.name).emit("message", { ...newMessage.dataValues, User: user })
       }
     } catch (error) {
