@@ -61,8 +61,11 @@ io.on("connection", async (socket) => {
       let { status, statusText, linkedInProfile } = await auth(payload.token)
 
       const rooms = await Room.findAll()
+      onlineUsers.push(linkedInProfile)
       socket.emit("loggedIn", { onlineUsers, rooms, me: linkedInProfile })
       //when the user connects, BE should keep track of socketId + linkedin id
+      socket.broadcast.emit("newUserHasLoggedIn", { onlineUsers })
+
     } catch (error) {
       console.log(error)
     }
@@ -70,7 +73,7 @@ io.on("connection", async (socket) => {
   socket.on("sendMsg", async (payload) => {
     try {
       let { status, statusText, linkedInProfile } = await auth(payload.token)
-      console.log(status);
+      console.log(status)
       if (status == 200) {
         let newMessage = await Message.create({
           content: payload.msg,
@@ -82,7 +85,10 @@ io.on("connection", async (socket) => {
         let room = await Room.findByPk(payload.room, { raw: true })
 
         console.log(room)
-        io.to(room.name).emit("message", { ...newMessage.dataValues, User: user })
+        io.to(room.name).emit("message", {
+          ...newMessage.dataValues,
+          User: user,
+        })
       }
     } catch (error) {
       console.log(error)
@@ -103,14 +109,13 @@ io.on("connection", async (socket) => {
             },
             raw: true,
             include: [User],
-            nest: true
+            nest: true,
           })
           if (room) {
             console.log("room found")
-            console.log("joining", room.name);
-            onlineUsers.push(linkedInProfile)
+            console.log("joining", room.name)
             socket.join(room.name)
-            socket.emit("joined", { msgs })
+            socket.broadcast.emit("joined", { msgs })
           } else {
             console.log("room not found")
             // //se non trova una stanza con quell'id, ne crea una nuova
