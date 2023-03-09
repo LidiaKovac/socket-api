@@ -10,52 +10,27 @@ import { roomRouter } from "./services/rooms/index.js"
 import { userRouter } from "./services/users/index.js"
 import Message from "./services/messages/message.js"
 import Room from "./services/rooms/room.js"
-import axios from "axios"
+import { auth } from "./utils/linkedin.js"
+import {
+  joined,
+  joinRoom,
+  loggedIn,
+  message,
+  newUserHasLoggedIn,
+  sendMsg,
+  setIdentity,
+} from "./utils/events.js" //file with all the events
+
 config()
 const PORT = process.env.PORT || 3001
 
 const app = express()
-const httpServer = createServer(app)
-const onlineUsers = new Set()
-const auth = async (token) => {
-  let { status, statusText, data } = await axios.get(
-    "https://striveschool-api.herokuapp.com/api/profile/me",
-    {
-      headers: {
-        Authorization: token,
-      },
-    }
-  )
-  let linkedInProfile
-  if (status !== 200) {
-    throw (
-      "Your key is probably wrong, but here is the actual error:" + statusText
-    )
-  }
-  //looking in our db
-  else {
-    linkedInProfile = await User.findOne({
-      where: {
-        linkedinId: data._id,
-      },
-    })
-    //if we don't find anything
-    if (!linkedInProfile) {
-      linkedInProfile = await User.create({
-        first_name: data.name,
-        last_name: data.surname,
-        linkedinId: data._id,
-        linkedinProPic: data.image,
-      })
-    }
-  }
+const httpServer = createServer(app) //crea http server
+const onlineUsers = new Set() //la lista degli utenti deve essere univoca (still testing?)
 
-  return { status, statusText, linkedInProfile }
-}
 export const io = new Server(httpServer)
 io.on("connection", async (socket) => {
-  console.log("connected")
-  socket.on("setIdentity", async (payload) => {
+  socket.on(setIdentity, async ({ token }) => {
     try {
       //looking in the linkedin db
       let { status, statusText, linkedInProfile } = await auth(payload.token)
@@ -70,22 +45,20 @@ io.on("connection", async (socket) => {
       console.log(error)
     }
   })
-  socket.on("sendMsg", async (payload) => {
+  socket.on(sendMsg, async ({ token, room: toRoom, msg }) => {
     try {
-      let { status, statusText, linkedInProfile } = await auth(payload.token)
-      console.log(status)
+      let { status, linkedInProfile } = await auth(token)
       if (status == 200) {
         let newMessage = await Message.create({
-          content: payload.msg,
-          RoomId: payload.room,
+          content: msg,
+          RoomId: toRoom,
           UserId: linkedInProfile.id,
         })
 
-        let user = await User.findByPk(linkedInProfile.id)
-        let room = await Room.findByPk(payload.room, { raw: true })
+        let user = await User.findByPk(linkedInProfile.id, { raw: true }) //the logged in user
+        let room = await Room.findByPk(toRoom, { raw: true })
 
-        console.log(room)
-        io.to(room.name).emit("message", {
+        io.to(room.name).emit(message, {
           ...newMessage.dataValues,
           User: user,
         })
@@ -94,10 +67,7 @@ io.on("connection", async (socket) => {
       console.log(error)
     }
   })
-  //*connect to previous conversations
-  //socket on sendMessage
-  //socket disconnect
-  socket.on("joinRoom", async ({ id, token }) => {
+  socket.on(joinRoom, async ({ id, token }) => {
     try {
       let { status, statusText, linkedInProfile } = await auth(token)
       if (status == 200) {
@@ -112,21 +82,10 @@ io.on("connection", async (socket) => {
             nest: true,
           })
           if (room) {
-            console.log("room found")
-            console.log("joining", room.name)
             socket.join(room.name)
             socket.broadcast.emit("joined", { msgs })
           } else {
-            console.log("room not found")
-            // //se non trova una stanza con quell'id, ne crea una nuova
-            // let newRoom = await Room.create(
-            //   { name: "new pippo room" },
-            //   { plain: true }
-            // )
-            //dopo aver creato la nuova stanza pusha su onlineUsers
-            // onlineUsers.push(new User(payload.id, socket.id, newRoom.id))
-            // socket.join(newRoom.name) //entra nella stanza
-            // console.log(newRoom.id)
+            throw "room not found"
           }
         }
       }

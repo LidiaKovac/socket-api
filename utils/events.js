@@ -1,0 +1,7 @@
+export const setIdentity = "setIdentity"
+export const loggedIn = "loggedIn"
+export const newUserHasLoggedIn = "newUserHasLoggedIn"
+export const sendMsg = "sendMsg"
+export const message = "message"
+export const joined = "joined"
+export const joinRoom = "joinRoom"
