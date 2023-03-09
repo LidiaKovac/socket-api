@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3001
 
 const app = express()
 const httpServer = createServer(app)
-const onlineUsers = new Set()
+let onlineUsers = []
 const auth = async (token) => {
   let { status, statusText, data } = await axios.get(
     "https://striveschool-api.herokuapp.com/api/profile/me",
@@ -56,7 +56,7 @@ export const io = new Server(httpServer)
 io.on("connection", async (socket) => {
   console.log("connected")
   socket.on("deleteAllOnlineUsers", (payload) => {
-    onlineUsers.clear()
+    onlineUsers = []
   })
   socket.on("setIdentity", async (payload) => {
     try {
@@ -64,15 +64,17 @@ io.on("connection", async (socket) => {
       let { status, statusText, linkedInProfile } = await auth(payload.token)
 
       const rooms = await Room.findAll()
-      onlineUsers.add(linkedInProfile)
+      let allUsersId = onlineUsers.map(us => us._id)
+      if(!allUsersId.includes(linkedInProfile._id)) {
+        onlineUsers.push(linkedInProfile)
+      }
       socket.emit("loggedIn", {
-        onlineUsers: [...onlineUsers],
+        onlineUsers,
         rooms,
         me: linkedInProfile,
       })
-      //when the user connects, BE should keep track of socketId + linkedin id
       socket.broadcast.emit("newUserHasLoggedIn", {
-        onlineUsers: [...onlineUsers],
+        onlineUsers,
       })
     } catch (error) {
       console.log(error)
