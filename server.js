@@ -64,8 +64,8 @@ io.on("connection", async (socket) => {
       let { status, statusText, linkedInProfile } = await auth(payload.token)
 
       const rooms = await Room.findAll()
-      let allUsersId = onlineUsers.map(us => us._id)
-      if(!allUsersId.includes(linkedInProfile._id)) {
+      let allUsersId = onlineUsers.map(us => us.id)
+      if(!allUsersId.includes(linkedInProfile.id)) {
         onlineUsers.push(linkedInProfile)
       }
       socket.emit("loggedIn", {
