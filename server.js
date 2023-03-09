@@ -55,6 +55,9 @@ const auth = async (token) => {
 export const io = new Server(httpServer)
 io.on("connection", async (socket) => {
   console.log("connected")
+  socket.on("deleteAllOnlineUsers", payload => {
+    onlineUsers.clear()
+  })
   socket.on("setIdentity", async (payload) => {
     try {
       //looking in the linkedin db
