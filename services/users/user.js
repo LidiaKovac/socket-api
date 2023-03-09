@@ -21,7 +21,7 @@ class User extends Model {
           type: STRING(100),
           allowNull: false,
         },
-        linkedInProPic: {
+        linkedinProPic: {
             type: STRING(200),
             allowNull: true,
             defaultValue: "https://icon-library.com/images/default-profile-icon/default-profile-icon-5.jpg"
