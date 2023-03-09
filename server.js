@@ -55,7 +55,7 @@ const auth = async (token) => {
 export const io = new Server(httpServer)
 io.on("connection", async (socket) => {
   console.log("connected")
-  socket.on("deleteAllOnlineUsers", payload => {
+  socket.on("deleteAllOnlineUsers", (payload) => {
     onlineUsers.clear()
   })
   socket.on("setIdentity", async (payload) => {
@@ -118,6 +118,7 @@ io.on("connection", async (socket) => {
             raw: true,
             include: [User],
             nest: true,
+            order: [["createdAt", "DESC"]],
           })
           if (room) {
             console.log("room found")
