@@ -39,6 +39,12 @@ const auth = async (token) => {
         linkedinId: data._id,
       },
     })
+    await linkedInProfile.update({
+      first_name: data.name,
+      last_name: data.surname,
+      linkedinId: data._id,
+      linkedinProPic: data.image,
+    })
     //if we don't find anything
     if (!linkedInProfile) {
       linkedInProfile = await User.create({
@@ -47,7 +53,7 @@ const auth = async (token) => {
         linkedinId: data._id,
         linkedinProPic: data.image,
       })
-    }
+    } 
   }
 
   return { status, statusText, linkedInProfile }
